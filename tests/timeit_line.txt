@@ -1,0 +1,9 @@
+python -m timeit -s "from screen_capture import capture_rgb_PIL;from color_returner import scale_down_returner_PIL" "scale_down_returner_PIL(capture_rgb_PIL(1920,1080),(2,16))"
+
+python -m timeit -s "from screen_capture import capture_rgb_PIL" "capture_rgb_PIL(1920,1080)"
+
+python -m timeit -s "from screen_capture import capture_rgb_mss_numpy" "capture_rgb_mss_numpy(1920,1080)"
+
+python -m timeit -s "from screen_capture_d3dshot import capture_rgb; import numpy as np;from PIL import Image" "im=capture_rgb();np.array(im.resize((2,16),resample=Image.BOX),dtype=np.uint8)[:,:,:3]"
+
+python -m timeit -s "from screen_capture_d3dshot import capture_rgb" "capture_rgb()"

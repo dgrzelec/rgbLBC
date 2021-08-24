@@ -56,9 +56,6 @@ if __name__ == "__main__":
             cv2.destroyAllWindows()
             break
 
-
-
-    # print(const_returner(np.ones((100,100,3))))
     
     # linear_returner_jit(0.7*np.ones((1920,1080,3)))
     # print()

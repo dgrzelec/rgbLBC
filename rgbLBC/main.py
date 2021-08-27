@@ -9,8 +9,14 @@ from exit_handler import set_exit_handler
 
 
 class rgbLBC_app:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, n_LEDs:int, target_fps:int, debug:bool) -> None:
+        self.nLEDs = n_LEDs
+        self.target_fps = target_fps
+        self.debug = debug
+
+        #initializations
+        set_exit_handler(self.stop)
+        self.d3d_object = d3dshot.create(capture_output='pil', frame_buffer_size=self.target_fps)
 
     def __generate_rgb():
         pass
@@ -22,7 +28,7 @@ class rgbLBC_app:
         pass
     
     def stop():
-        pass
+        print("app stopped properly")
 
 if __name__ == "__main__":
     app = rgbLBC_app()

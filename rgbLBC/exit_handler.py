@@ -1,3 +1,4 @@
+# source: https://stackoverflow.com/questions/36126165/how-to-handle-console-exit-and-object-destruction/36126780#36126780
 import os, sys
 
 def set_exit_handler(func):
@@ -18,7 +19,7 @@ if __name__ == "__main__":
         import time
         time.sleep(5)
 
-set_exit_handler(on_exit)
-print ("Press  to quit")
-input()
-print ("quit!")
+    set_exit_handler(on_exit)
+    print ("Press  to quit")
+    input()
+    print ("quit!")

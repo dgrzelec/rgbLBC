@@ -37,7 +37,7 @@ def scale_down_returner_cv2(img:np.ndarray, shape:Tuple[int,int]):
     return cv2.resize(img, dsize=shape, interpolation=cv2.INTER_AREA)
 
 def scale_down_returner_PIL(img:Image, shape:Tuple[int,int])->np.ndarray:
-    return np.flip(np.array(img.resize(shape,resample=Image.BOX),dtype=np.uint8)[:,:,:3],axis=2)
+    return np.flip(np.array(img.resize(shape,resample=Image.BOX),dtype=np.uint8)[:,:,:3],axis=2) #flip possibly unnecesarry
 
 if __name__ == "__main__":
     

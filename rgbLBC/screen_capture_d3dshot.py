@@ -10,4 +10,7 @@ def capture_rgb()->Image:
 
 if __name__ == "__main__":
     im = d.screenshot()
-    im.show()
+
+    for i,display in enumerate(d.displays):
+        print("[{}]".format(i),display)
+    # im.show()

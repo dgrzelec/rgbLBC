@@ -7,11 +7,12 @@ The idea is to capture screen and convert (downsample) captured image to Nx2 arr
 Next its going to be send over COM port to Arduino or similar microcontroller, which will handle addressable RGB strip. 
 
 ### What is done
-- fast screenshot capturing library [d3dshot](https://pypi.org/project/d3dshot/#description)
+- using fast screenshot capturing library [d3dshot](https://pypi.org/project/d3dshot/#description)
 - downsampling using [PIL.Image.resize()](https://pillow.readthedocs.io/en/stable/reference/Image.html?highlight=resize#PIL.Image.Image.resize) with Image.BOX resampling algorithm
+- class iherits now directly from D3DShot; easier access to methods and attributes, while maintaining singleton of parent class
 
 ### To do
-- base class functionalities for console interface
+- base class functionalities
 - threaded start() method 
 - COM communication (sending RGB values)
 - Arduino code - (FastLED?)

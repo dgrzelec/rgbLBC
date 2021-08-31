@@ -1,16 +1,16 @@
-from time import sleep
-
-import numpy as np
-# from d3dshot.d3dshot import D3DShot
-# from d3dshot import create
 import d3dshot
+from time import sleep
+import numpy as np
+from d3dshot.d3dshot import D3DShot
+from d3dshot import _validate_capture_output
+
 from PIL import Image
 
 #change downsampling func here if necessary
 from color_returner import scale_down_returner_PIL as downsample_func
 
 
-class rgbLBC_app(object):
+class rgbLBC_app(D3DShot):
     def __init__(
         self, 
         n_LEDs:int, 
@@ -19,9 +19,10 @@ class rgbLBC_app(object):
         log_func = print, 
         display_idx = 0
         ) -> None:
- 
-        # super().__init__(capture_output='pil', frame_buffer_size=1) #buffer_size = 1 for pop aproach
-        self.d3d_object = d3dshot.create(capture_output='pil', frame_buffer_size=1)
+
+        co = _validate_capture_output('pil')
+        super().__init__(capture_output=co, frame_buffer_size=1) #buffer_size = 1 for pop aproach
+        # self.d3d_object = d3dshot.create(capture_output='pil', frame_buffer_size=1)
 
         self.nLEDs = n_LEDs
         self.target_fps = target_fps
@@ -43,11 +44,6 @@ class rgbLBC_app(object):
 
         self._is_running = False
     
-
-    #### instead of inheritance(which doesnt work), getattr is used
-    def __getattr__(self,name):
-        return self.d3d_object.__getattribute__(name)
-
     @property
     def is_running(self)->bool:
         return self._is_running
@@ -92,7 +88,7 @@ class rgbLBC_app(object):
     
     def stop(self):
         if self._is_capturing:
-            self.d3d_object.stop()
+            super().stop()
 
         if self._is_running:
             self._is_running = False
@@ -102,11 +98,17 @@ class rgbLBC_app(object):
 
 if __name__ == "__main__":
     from exit_handler import set_exit_handler
+    
 
     print("enter main")
 
+
     app = rgbLBC_app(30,40)
-    set_exit_handler(app.stop)
+    def stop_helper(sig, func=None):
+        app.stop()
+
+    set_exit_handler(stop_helper)
+    
     app.screenshot()
     # app.set_display(0)
 

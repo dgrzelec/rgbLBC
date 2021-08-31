@@ -37,7 +37,8 @@ def scale_down_returner_cv2(img:np.ndarray, shape:Tuple[int,int]):
     return cv2.resize(img, dsize=shape, interpolation=cv2.INTER_AREA)
 
 def scale_down_returner_PIL(img:Image, shape:Tuple[int,int])->np.ndarray:
-    return np.flip(np.array(img.resize(shape,resample=Image.BOX),dtype=np.uint8)[:,:,:3],axis=2) #flip possibly unnecesarry
+    #return np.flip(np.array(img.resize(shape,resample=Image.BOX),dtype=np.uint8)[:,:,:3],axis=2) #flip possibly only for cv2 display
+    return np.array(img.resize(shape,resample=Image.BOX),dtype=np.uint8)[:,:,:3]
 
 if __name__ == "__main__":
     
@@ -48,27 +49,44 @@ if __name__ == "__main__":
         # im = capture_rgb_PIL(1920,1080)
         im = capture_rgb()
         im = scale_down_returner_PIL(im, (2,16))
-        
-        cv2.imshow("image",im)
+        im[0,0,:] = 255
+        im[0,1,:] = 255
+
+        # im = np.concatenate((np.flip(im[:,0,:], axis=0) ,im[:,1,:]),axis=0, dtype=np.uint8)
+        # print(im.shape)
+
+        im = im.reshape((32,1,3), order='F')
+        im[0:16,0,:] = im[15::-1,0,:]
+
+        cv2.imshow("image",np.flip(im,axis=-1))
         
 
         if cv2.waitKey(25)&0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
 
+    # im = capture_rgb()
+    # im = scale_down_returner_PIL(im, (2,16))
+    # im[0,0,:] = 255
+    # im[0,1,:] = 255
     
-    # linear_returner_jit(0.7*np.ones((1920,1080,3)))
-    # print()
+    # import time
     # t1 = time.time()
-    # print(linear_returner(0.7*np.ones((1920,1080,3))))
+    # for _ in range(1000):
+    #     im = np.concatenate((np.flip(im[:,0,:], axis=0) ,im[:,1,:]),axis=0, dtype=np.uint8)
     # t2 = time.time()
-    # print("time:",t2-t1)
+    # print("time concatenate:",(t2-t1)/1000)
+
+    # im = capture_rgb()
+    # im = scale_down_returner_PIL(im, (2,16))
+    # im[0,0,:] = 255
+    # im[0,1,:] = 255
+
     
 
-    # print()
     # t1 = time.time()
-    # print(linear_returner_jit(0.7*np.ones((1920,1080,3))))
+    # for _ in range(1000):
+    #     im.reshape((32,1,3))
+    #     im[0:16] = im[15::-1]
     # t2 = time.time()
-    # print("time:",t2-t1)
-
-    #linear_returner_jit.inspect_types()
+    # print("time concatenate:",(t2-t1)/1000)

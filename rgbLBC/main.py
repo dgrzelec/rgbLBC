@@ -6,10 +6,12 @@ from d3dshot import _validate_capture_output
 import threading
 
 from PIL import Image
+from numpy.core.fromnumeric import shape
 
 #change downsampling func here if necessary
 from color_returner import scale_down_returner_PIL as downsample_func
 
+from serial import Serial
 
 class rgbLBC_app(D3DShot):
     def __init__(
@@ -48,6 +50,7 @@ class rgbLBC_app(D3DShot):
 
         self._is_running = False
         self._rgb_thread = None
+        self._is_serial_set = False
 
     @property
     def is_running(self)->bool:
@@ -57,12 +60,19 @@ class rgbLBC_app(D3DShot):
     def is_frame_ready(self)->bool:
         return bool(self.frame_buffer)
 
+    @property
+    def is_serial_set(self):
+        return self._is_serial_set
+
     def get_current_rgb(self)->np.ndarray:
-        return self.rgb_vals_array
+        return self.rgb_vector
 
     def pop_latest_frame(self)->Image:
         return self.frame_buffer.popleft()
 
+    def setup_serial(self, port:str, baudrate:int):
+        self.ser = Serial(port, baudrate)
+        self._is_serial_set = True
 
     def __log(self,msg:str, kind:str = 'INFO'):
         """log function to use inside a class; defined by 'log_func' init parameter
@@ -105,7 +115,19 @@ class rgbLBC_app(D3DShot):
             self._rgb_thread.join(timeout=1)
             self._rgb_thread = None
 
+        if self.is_serial_set:
+            self.ser.close
+
         self.__log("app stopped properly")
+
+    def send(self):
+        if self.is_serial_set:
+            for i in range(2*self.nLEDs):
+                self.__send_to_COM(self.ser, bytearray(self.rgb_vector[i,:]))
+            if self.debug:
+                print(self.rgb_vector[0,:].shape)
+
+        else: raise RuntimeError("Serial connection is not set, us setup_serial() method") 
 
     def __generate_rgb(self):
         """Generates and stores downsampled screenshot and RGB values vector, ready to be send through COM.
@@ -118,32 +140,35 @@ class rgbLBC_app(D3DShot):
         self.rgb_vector[0:self.nLEDs,0,:] = self.rgb_vector[self.nLEDs-1::-1,0,:]
         self.rgb_vector = np.squeeze(self.rgb_vector)
 
-    def __send_to_COM(self):
-        pass
+    def __send_to_COM(self, ser: Serial, data:bytearray):
+        ser.write(data)
     
     def _start(self):
         while self.is_running:
             if self.is_frame_ready:
                 self.__generate_rgb()
-                # self.__send_to_COM()
+                self.send()
             sleep(0.001)
 
 
 if __name__ == "__main__":
     from exit_handler import set_exit_handler
-    
+    from serial_utilities import waitForArduino
 
     print("enter main")
 
 
-    app = rgbLBC_app(30,40)
+    app = rgbLBC_app(30,40, debug=True)
     def stop_helper(sig, func=None):
         app.stop()
 
     set_exit_handler(stop_helper)
     
+    app.setup_serial("COM3", 115200)
+    waitForArduino(app.ser)
+
     app.start()
 
-    sleep(1)
-
+    sleep(0.05)
+    
     app.stop()

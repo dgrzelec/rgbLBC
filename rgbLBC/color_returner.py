@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     while True:
         # im = capture_rgb_PIL(1920,1080)
-        im = capture_rgb()
+        im = d.screenshot()
         im = scale_down_returner_PIL(im, (2,16))
         im[0,0,:] = 255
         im[0,1,:] = 255

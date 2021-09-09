@@ -1,4 +1,5 @@
-from screen_capture_d3dshot import capture_rgb
+# from screen_capture_d3dshot import capture_rgb
+import d3dshot
 from screen_capture import capture_rgb_PIL
 from typing import Tuple
 from PIL import Image
@@ -45,6 +46,9 @@ if __name__ == "__main__":
     cv2.namedWindow('image',cv2.WINDOW_NORMAL)
     cv2.resizeWindow('image', (400, 800))
     
+    d = d3dshot.create('pil')
+    N = 30
+
     while True:
         # im = capture_rgb_PIL(1920,1080)
         im = capture_rgb()
@@ -55,8 +59,8 @@ if __name__ == "__main__":
         # im = np.concatenate((np.flip(im[:,0,:], axis=0) ,im[:,1,:]),axis=0, dtype=np.uint8)
         # print(im.shape)
 
-        im = im.reshape((32,1,3), order='F')
-        im[0:16,0,:] = im[15::-1,0,:]
+        im2 = im.reshape((2*N,1,3), order='F')
+        im2[0:N,0,:] = im2[N-1::-1,0,:]
 
         cv2.imshow("image",np.flip(im,axis=-1))
         
@@ -65,20 +69,21 @@ if __name__ == "__main__":
             cv2.destroyAllWindows()
             break
 
-    # im = capture_rgb()
-    # im = scale_down_returner_PIL(im, (2,16))
+    # im = d.screenshot()
+    # im = scale_down_returner_PIL(im, (2,N))
     # im[0,0,:] = 255
     # im[0,1,:] = 255
     
     # import time
     # t1 = time.time()
     # for _ in range(1000):
-    #     im = np.concatenate((np.flip(im[:,0,:], axis=0) ,im[:,1,:]),axis=0, dtype=np.uint8)
+    #     im2 = np.concatenate((np.flip(im[:,0,:], axis=0) ,im[:,1,:]),axis=0, dtype=np.uint8)
     # t2 = time.time()
     # print("time concatenate:",(t2-t1)/1000)
+    # print("shape im2 = ", im2.shape)
 
-    # im = capture_rgb()
-    # im = scale_down_returner_PIL(im, (2,16))
+    # im = d.screenshot()
+    # im = scale_down_returner_PIL(im, (2,N))
     # im[0,0,:] = 255
     # im[0,1,:] = 255
 
@@ -86,7 +91,9 @@ if __name__ == "__main__":
 
     # t1 = time.time()
     # for _ in range(1000):
-    #     im.reshape((32,1,3))
-    #     im[0:16] = im[15::-1]
+    #     im2 = im.reshape((2*N,1,3), order='F')
+    #     im2[0:N,0,:] = im2[N-1::-1,0,:]
+    #     im2 = np.squeeze(im2)
     # t2 = time.time()
     # print("time concatenate:",(t2-t1)/1000)
+    # print("shape im2 = ", im2.shape)

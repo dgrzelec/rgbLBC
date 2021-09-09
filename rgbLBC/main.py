@@ -1,8 +1,9 @@
-import d3dshot
 from time import sleep
 import numpy as np
 from d3dshot.d3dshot import D3DShot
 from d3dshot import _validate_capture_output
+
+import threading
 
 from PIL import Image
 
@@ -20,7 +21,7 @@ class rgbLBC_app(D3DShot):
         display_idx = 0
         ) -> None:
 
-        co = _validate_capture_output('pil')
+        co = _validate_capture_output('pil') #validating by hand instead of create() function
         super().__init__(capture_output=co, frame_buffer_size=1) #buffer_size = 1 for pop aproach
         # self.d3d_object = d3dshot.create(capture_output='pil', frame_buffer_size=1)
 
@@ -29,10 +30,13 @@ class rgbLBC_app(D3DShot):
         self.debug = debug
         self.log_func = log_func
         self.display_idx = display_idx
+        #################################### VALIDATION 
+        self.target_fps = self._validate_target_fps(self.target_fps)
 
+        ####################################
         self.shape = (2,self.nLEDs)
-        self.rgb_vals_array = np.zeros(self.shape)
-
+        self.rgb_vals_array = np.zeros(self.shape, dtype=np.uint8)
+        self.rgb_vector = np.zeros(2*self.nLEDs, dtype=np.uint8)
 
         ############################### displays
         self.__log("Displays available:")
@@ -43,7 +47,8 @@ class rgbLBC_app(D3DShot):
         ################################
 
         self._is_running = False
-    
+        self._rgb_thread = None
+
     @property
     def is_running(self)->bool:
         return self._is_running
@@ -58,11 +63,6 @@ class rgbLBC_app(D3DShot):
     def pop_latest_frame(self)->Image:
         return self.frame_buffer.popleft()
 
-    def __generate_rgb(self):
-        return downsample_func(self.pop_latest_frame(), self.shape) 
-
-    def __send_to_COM():
-        pass
 
     def __log(self,msg:str, kind:str = 'INFO'):
         """log function to use inside a class; defined by 'log_func' init parameter
@@ -84,7 +84,17 @@ class rgbLBC_app(D3DShot):
         
 
     def start(self):
-        pass
+        if self.is_running:
+            return False
+
+        self._is_running = True
+
+        self.capture(self.target_fps)
+
+        self._rgb_thread = threading.Thread(target=self._start)
+        self._rgb_thread.start()
+
+        return True
     
     def stop(self):
         if self._is_capturing:
@@ -92,9 +102,32 @@ class rgbLBC_app(D3DShot):
 
         if self._is_running:
             self._is_running = False
-            #sth else to stop here
+            self._rgb_thread.join(timeout=1)
+            self._rgb_thread = None
 
         self.__log("app stopped properly")
+
+    def __generate_rgb(self):
+        """Generates and stores downsampled screenshot and RGB values vector, ready to be send through COM.
+        There should be frame in a frame buffer
+        """
+        self.rgb_vals_array = downsample_func(self.pop_latest_frame(), self.shape) 
+        
+        #converting to vector of RGB values, assuming lower left starting point
+        self.rgb_vector = self.rgb_vals_array.reshape((2*self.nLEDs,1,3), order='F')
+        self.rgb_vector[0:self.nLEDs,0,:] = self.rgb_vector[self.nLEDs-1::-1,0,:]
+        self.rgb_vector = np.squeeze(self.rgb_vector)
+
+    def __send_to_COM(self):
+        pass
+    
+    def _start(self):
+        while self.is_running:
+            if self.is_frame_ready:
+                self.__generate_rgb()
+                # self.__send_to_COM()
+            sleep(0.001)
+
 
 if __name__ == "__main__":
     from exit_handler import set_exit_handler
@@ -109,18 +142,8 @@ if __name__ == "__main__":
 
     set_exit_handler(stop_helper)
     
-    app.screenshot()
-    # app.set_display(0)
+    app.start()
 
-    app.screenshot_every(1)
     sleep(1)
-    # print(len(app.d3d_object.frame_buffer))
-    # app.d3d_object.frame_buffer.popleft()
-    # print(len(app.d3d_object.frame_buffer))
-    if app.is_frame_ready:
-        print(len(app.frame_buffer))
-    app.pop_latest_frame()
-    if app.is_frame_ready:
-        print(len(app.frame_buffer))
-    # print(app.is_running)
+
     app.stop()

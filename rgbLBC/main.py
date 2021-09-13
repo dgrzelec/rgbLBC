@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, time
 import numpy as np
 from d3dshot.d3dshot import D3DShot
 from d3dshot import _validate_capture_output
@@ -20,7 +20,8 @@ class rgbLBC_app(D3DShot):
         target_fps:int, 
         debug:bool = False, 
         log_func = print, 
-        display_idx = 0
+        display_idx = 0,
+        send_to_serial = True
         ) -> None:
 
         co = _validate_capture_output('pil') #validating by hand instead of create() function
@@ -32,6 +33,7 @@ class rgbLBC_app(D3DShot):
         self.debug = debug
         self.log_func = log_func
         self.display_idx = display_idx
+        self.send_to_serial = send_to_serial
         #################################### VALIDATION 
         self.target_fps = self._validate_target_fps(self.target_fps)
 
@@ -51,6 +53,7 @@ class rgbLBC_app(D3DShot):
         self._is_running = False
         self._rgb_thread = None
         self._is_serial_set = False
+        self._fps = 0.0
 
     @property
     def is_running(self)->bool:
@@ -63,6 +66,14 @@ class rgbLBC_app(D3DShot):
     @property
     def is_serial_set(self):
         return self._is_serial_set
+
+    @property
+    def get_fps(self):
+        return self._fps
+
+    def __fps(self, seconds):
+        self._fps = (self._fps * .9 ) + (1 / seconds * .1)
+        return self._fps
 
     def get_current_rgb(self)->np.ndarray:
         return self.rgb_vector
@@ -124,8 +135,8 @@ class rgbLBC_app(D3DShot):
         if self.is_serial_set:
             for i in range(2*self.nLEDs):
                 self.__send_to_COM(self.ser, bytearray(self.rgb_vector[i,:]))
-            if self.debug:
-                print(self.rgb_vector[0,:].shape)
+            # if self.debug:
+            #     print(self.rgb_vector[0,:].shape)
 
         else: raise RuntimeError("Serial connection is not set, us setup_serial() method") 
 
@@ -144,10 +155,20 @@ class rgbLBC_app(D3DShot):
         ser.write(data)
     
     def _start(self):
+        """Method to run as a thread. The aproach here is to check every 1 ms if frame is ready,
+         and then eventually do sth with it
+        """
+        start_frame_time = time()
+        
         while self.is_running:
             if self.is_frame_ready:
-                self.__generate_rgb()
-                self.send()
+                self.__generate_rgb() #get the rgb_vector from captured frame...
+                
+                if self.send_to_serial: self.send() #...and optionally send it to serial port
+
+                self.__fps(time() - start_frame_time) #calculate fps
+                start_frame_time = time()
+                if self.debug: self.__log("FPS: "+str(self.get_fps))
             sleep(0.001)
 
 
@@ -169,6 +190,6 @@ if __name__ == "__main__":
 
     app.start()
 
-    sleep(0.05)
+    sleep(5)
     
     app.stop()
